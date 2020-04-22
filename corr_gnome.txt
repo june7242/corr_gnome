@@ -1,0 +1,220 @@
+library(shinydashboard)
+library(DT)
+library(shiny)
+library(showtext)
+
+# Define UI for dataset viewer app ----
+ui <-dashboardPage(
+  
+  # App title ----
+  dashboardHeader(title="Corresponding Whole Gnome", titleWidth = 300),
+  # Sidebar layout with a input and output definitions ----
+  dashboardSidebar(disable=T),
+  # Main panel for displaying outputs ----
+  dashboardBody(
+    h3("Corresponding part"),
+      box(h4("Please input the url or gnome!"), textInput(inputId = "url", label = h4("url:")), textInput(inputId="gnome", label = h4("gnome: ")), textInput(inputId = "sequence", label = h4("sequence:")), width=3),
+      box(h4("Corresponding parts: "), solidHeader=T, verbatimTextOutput("summary"), width=9), box(h4("Whole gnome: "), solidHeader=T, div(imageOutput("wholegnome")), style='overflow-y: auto;max-height: 340px;', width=9)))
+
+# Define server logic to summarize and view selected dataset ----
+server <- function(input, output) {
+  # Return the requested dataset ----
+  datasetInput1 <- reactive({
+    input$url})
+  datasetInput2 <- reactive({
+    input$sequence})
+  datasetInput3 <- reactive({
+    input$gnome})
+  font_add_google('Raleway', 'raleway')
+  showtext_auto()
+  
+  # Generate a summary of the dataset ----
+  output$wholegnome <- renderImage({
+    data <- c(datasetInput3(), datasetInput1())
+    data2 <- datasetInput2()
+    library(rvest)
+    library(httr)
+    library(stringr)
+    library(dplyr)
+    data<-unlist(strsplit(data, "nuccore/"))
+    data<-paste0(data[1], "sviewer/viewer.fcgi?id=", data[2])
+    data<-GET(data)
+    data<-content(data)
+    data<-unlist(strsplit(data, "ORIGIN      "))
+    data<-data[2]
+    data<-gsub("[0]", '', data)
+    data<-gsub("[1]", "", data)
+    data<-gsub("[2]", "", data)
+    data<-gsub("[3]", "", data)
+    data<-gsub("[4]", "", data)
+    data<-gsub("[5]", "", data)
+    data<-gsub("[6]", "", data)
+    data<-gsub("[7]", "", data)
+    data<-gsub("[8]", "", data)
+    data<-gsub("[9]", "", data)
+    data<-gsub("[ ]", "", data)
+    data<-gsub("[\n]", "", data)
+    data<-gsub("[/]", "", data)
+    data<-unlist(strsplit(data, ""))
+    
+    data2<-gsub("[0]", '', data2)
+    data2<-gsub("[1]", "", data2)
+    data2<-gsub("[2]", "", data2)
+    data2<-gsub("[3]", "", data2)
+    data2<-gsub("[4]", "", data2)
+    data2<-gsub("[5]", "", data2)
+    data2<-gsub("[6]", "", data2)
+    data2<-gsub("[7]", "", data2)
+    data2<-gsub("[8]", "", data2)
+    data2<-gsub("[9]", "", data2)
+    data2<-gsub("[ ]", "", data2)
+    data2<-gsub("[\n]", "", data2)
+    data2<-gsub("[/]", "", data2)
+    data2<-unlist(strsplit(data2, ""))
+    data2<-tolower(data2)
+    
+    end1<-length(data2)
+
+        end<-length(data)-end1+1
+    end2<-length(data)
+    number<-1:end
+    number1<-end1:end2
+    
+    lem<-c()
+    i<-1
+    p<-1
+    for(i in 1:end){
+      for(p in 1:end1){
+        lem<-c(lem, data[i+p-1])
+      }}
+    lem<-array(lem, c(end1, 1, i))
+    
+    sum(lem[, 1, 1]==data2)
+    i<-1
+    mib<-c()
+    for(i in 1:end){
+      mib<-c(mib, sum(lem[, 1, i]==data2))
+    }
+    lem1<-cbind(number, number1, mib)
+    result0<-c()
+    result0<-subset(lem1, mib==end1)
+
+    
+    i<-1
+    j<-1
+    k<-1
+    t<-1
+    size<-end2%/%2500+1
+    sizej<-end2%/%50+1
+    outfile <- tempfile(fileext='.png')
+    
+    png(outfile, height=sizej*70, width=1000)
+    par(mar=c(0, 0, 0, 0))
+    plot(0, 0, xlim=c(1,50), ylim=c(1,sizej), ann=T, xaxt = 'n', yaxt = 'n', type="n", xlab="", ylab="", axes=F, main="")
+    for(j in 1:sizej){# i=x, j=y
+      for(i in 1:50){
+        text(i, sizej+1-j, labels=data[i+50*(j-1)], cex=1.3, family='raleway')}
+      #### data1의 모든 데이터를 한 행에 50개씩 끊어서 출력
+      if(length(result0)!=0){
+      for(k in 1:length(result0[ ,1])){
+        if(as.numeric(result0[k, 1]%/%50)==as.numeric(result0[k, 2]%/%50)){
+          #####만약 result0[k, 1]과 result0[k, 2]가 같은 행에 있다면
+          text(as.numeric(result0[k, 1]%%50):as.numeric(result0[k, 2]%%50), sizej+1-(as.numeric(result0[k, 2]%/%50+1)), labels=data[as.numeric(result0[k, 1]):as.numeric(result0[k, 2])], col='green', cex=1.5, family='raleway')
+          legend(as.numeric(result0[k, 1]%%50), sizej+1-(as.numeric(result0[k, 2]%/%50+1)+0.2), paste0(as.numeric(result0[k, 1]), "~", as.numeric(result0[k, 2])
+          )
+          )
+          }
+        else{
+          text(as.numeric(result0[k, 1]%%50):50, sizej+1-(as.numeric(result0[k, 1]%/%50)+1), labels=data[as.numeric(result0[k, 1]):(as.numeric(result0[k, 1]%/%50+1)*50)], col='green', cex=1.5, family='raleway')
+          ##### 먼저 result0[k, 1]부터 그 줄의 끝까지 출력하고
+          text(1:as.numeric(result0[k, 2]%%50), sizej+1-(as.numeric(result0[k, 2]%/%50)+1), labels=data[(as.numeric(result0[k, 1]%/%50+1)*50+1):as.numeric(result0[k, 2])], col='green', cex=1.5, family='raleway')
+          legend(as.numeric(result0[k, 1]%%50), sizej+1-(as.numeric(result0[k, 1]%/%50+1)+0.2), paste0(as.numeric(result0[k, 1]), "~", as.numeric(result0[k, 2])
+          ))
+          ##### 다음 줄의 처음부터 result0[k, 2]까지 출력한다.
+        }
+      }
+      }}
+    dev.off()
+    
+    list(src = outfile, contentType = 'image/png', width = 800, height=50*sizej)
+  }, deleteFile=TRUE)
+  
+  output$summary <- renderPrint({
+    data <- c(datasetInput3(), datasetInput1())
+    data2 <- datasetInput2()
+    data<-unlist(strsplit(data, "nuccore/"))
+    data<-paste0(data[1], "sviewer/viewer.fcgi?id=", data[2])
+    data<-GET(data)
+    data<-content(data)
+    data<-unlist(strsplit(data, "ORIGIN      "))
+    data<-data[2]
+    data<-gsub("[0]", '', data)
+    data<-gsub("[1]", "", data)
+    data<-gsub("[2]", "", data)
+    data<-gsub("[3]", "", data)
+    data<-gsub("[4]", "", data)
+    data<-gsub("[5]", "", data)
+    data<-gsub("[6]", "", data)
+    data<-gsub("[7]", "", data)
+    data<-gsub("[8]", "", data)
+    data<-gsub("[9]", "", data)
+    data<-gsub("[ ]", "", data)
+    data<-gsub("[\n]", "", data)
+    data<-gsub("[/]", "", data)
+    data<-unlist(strsplit(data, ""))
+    
+    data2<-gsub("[0]", '', data2)
+    data2<-gsub("[1]", "", data2)
+    data2<-gsub("[2]", "", data2)
+    data2<-gsub("[3]", "", data2)
+    data2<-gsub("[4]", "", data2)
+    data2<-gsub("[5]", "", data2)
+    data2<-gsub("[6]", "", data2)
+    data2<-gsub("[7]", "", data2)
+    data2<-gsub("[8]", "", data2)
+    data2<-gsub("[9]", "", data2)
+    data2<-gsub("[ ]", "", data2)
+    data2<-gsub("[\n]", "", data2)
+    data2<-gsub("[/]", "", data2)
+    data2<-unlist(strsplit(data2, ""))
+    data2<-tolower(data2)
+    
+    end1<-length(data2)
+    end<-length(data)-end1+1
+    end2<-length(data)
+    number<-1:end
+    number1<-end1:end2
+    
+    lem<-c()
+    
+    i<-1
+    p<-1
+    for(i in 1:end){
+      for(p in 1:end1){
+        lem<-c(lem, data[i+p-1])
+      }}
+
+    lem<-array(lem, c(end1, 1, i))
+    i<-1
+    mib<-c()
+    for(i in 1:end){
+      mib<-c(mib, sum(lem[, 1, i]==data2))
+    }
+    lem1<-cbind(number, number1, mib)
+    result0<-c()
+    result0<-subset(lem1, mib==end1)
+    result<-c()
+    i<-1
+    if(length(result0)==0){
+      print("일치하는 부분이 없습니다.")
+    }else{
+      for(i in 1:length(result0[, 1])){
+      result<-c(result, paste(result0[i, 1], "~", result0[i, 2]))}
+    print(result)}
+  })
+}
+
+
+# Create Shiny app ----
+shinyApp(ui = ui, server = server)
+
